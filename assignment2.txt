@@ -1,0 +1,48 @@
+import numpy as np
+
+class WeatherSimulation:
+    def __init__(self, transition_probabilities, holding_times):
+        self.transition_probabilities = transition_probabilities
+        self.holding_times = holding_times
+        self.states = list(transition_probabilities.keys())
+        self.current_state = 'sunny'
+        self.current_state_remaining_hours = holding_times[self.current_state]
+
+        # Check if the sum of probabilities for each state is equal to 1
+        for state, transition_probs in self.transition_probabilities.items():
+            if not np.isclose(sum(transition_probs.values()), 1):
+                raise RuntimeError(f"Transition probabilities for {state} do not sum up to 1")
+
+    def get_states(self):
+        return self.states
+
+    def current_state(self):
+        return self.current_state
+
+    def set_state(self, new_state):
+        if new_state not in self.states:
+            raise ValueError(f"Invalid state name: {new_state}")
+        self.current_state = new_state
+        self.current_state_remaining_hours = self.holding_times[new_state]
+
+    def current_state_remaining_hours(self):
+        return self.current_state_remaining_hours
+
+    def next_state(self):
+        transition_probs = self.transition_probabilities[self.current_state]
+        next_state = np.random.choice(self.states, p=list(transition_probs.values()))
+        self.set_state(next_state)
+
+    def iterable(self):
+        while True:
+            yield self.current_state
+            self.next_state()
+
+    def simulate(self, hours):
+        state_counts = {state: 0 for state in self.states}
+        for i in range(hours):
+            self.next_state()
+            state_counts[self.current_state] += 1
+
+        state_percents = [state_counts[state] / hours for state in self.states]
+        return state_percents
